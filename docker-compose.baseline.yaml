@@ -77,9 +77,14 @@ services:
 
 volumes:
   ollama: 
+    external:
+      true
   open-webui: 
+    external:
+      true
   pipelines:
-    driver: local
+    external:
+      true
   # grafana_data:
   # prometheus_data:
 
