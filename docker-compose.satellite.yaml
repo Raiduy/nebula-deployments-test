@@ -31,8 +31,6 @@ services:
       - path: ./ollama/test.env
         required: true
     restart: unless-stopped
-    networks:
-      - proxy
     volumes:
       - ollama:/root/.ollama
       - ./ollama/ollama_entrypoint.sh:/entrypoint.sh
@@ -53,4 +51,5 @@ services:
 
 volumes:
   ollama:
-    {}
+    external:
+      true
