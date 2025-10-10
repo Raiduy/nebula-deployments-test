@@ -1,0 +1,85 @@
+name: nebula
+
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    command:
+      # EntryPoints
+      - "--entrypoints.web.address=:80"
+
+      # Providers 
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    entrypoint: ["/usr/bin/bash", "/entrypoint.sh"]
+    env_file:
+      - path: ./ollama/test.env
+        required: true
+    volumes:
+      - ./ollama/ollama_entrypoint.sh:/entrypoint.sh
+      - ollama:/root/.ollama
+    healthcheck:
+      test: "ollama --version && ollama ps || exit 1"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+
+  open-webui:
+    build:
+      context: .
+      args:
+        OLLAMA_BASE_URL: '/ollama'
+      dockerfile: Dockerfile
+    image: ghcr.io/open-webui/open-webui:latest
+    container_name: open-webui
+    restart: unless-stopped
+    env_file:
+      - path: ./open-webui/baseline.env
+        required: true
+    volumes:
+      - open-webui:/app/backend/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.open-webui.rule=${TRAEFIK_OPENWEBUI_HOST}
+
+
+  pipelines:
+    image: ghcr.io/open-webui/pipelines:main
+    container_name: pipelines
+    restart: unless-stopped
+    environment:
+      - PIPELINES_API_KEY=${PIPELINES_API_KEY}
+    volumes:
+      - pipelines:/app/pipelines
+
+
+volumes:
+  ollama: 
+  open-webui: 
+  pipelines:
+    driver: local
+  # grafana_data:
+  # prometheus_data:
+

@@ -1,0 +1,56 @@
+services:
+  traefik:
+    image: traefik:latest
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+    ports:
+      - "80:80"
+      - "443:443"
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    command:
+      # EntryPoints
+      - "--entrypoints.web.address=:80"
+
+      # Providers 
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+
+
+  ollama:
+    image: ollama/ollama:latest
+    pull_policy: always
+    container_name: ollama
+    entrypoint: ["/usr/bin/bash", "/entrypoint.sh"]
+    env_file:
+      - path: ./ollama/test.env
+        required: true
+    restart: unless-stopped
+    networks:
+      - proxy
+    volumes:
+      - ollama:/root/.ollama
+      - ./ollama/ollama_entrypoint.sh:/entrypoint.sh
+    healthcheck:
+      test: "ollama --version && ollama ps || exit 1"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.ollama.rule=Host(`${HOST}`)"
+      - "traefik.http.routers.ollama.entrypoints=web"
+       
+
+volumes:
+  ollama:
+    {}
