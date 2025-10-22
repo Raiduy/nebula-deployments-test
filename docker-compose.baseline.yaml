@@ -5,6 +5,7 @@ services:
     image: traefik:latest
     container_name: traefik
     restart: unless-stopped
+    pull_policy: always
     security_opt:
       - no-new-privileges:true
 
@@ -28,6 +29,7 @@ services:
     image: ollama/ollama:latest
     container_name: ollama
     restart: unless-stopped
+    pull_policy: always
     entrypoint: ["/usr/bin/bash", "/entrypoint.sh"]
     env_file:
       - path: ./ollama/test.env
@@ -53,6 +55,7 @@ services:
         OLLAMA_BASE_URL: '/ollama'
       dockerfile: Dockerfile
     image: ghcr.io/open-webui/open-webui:latest
+    pull_policy: always
     container_name: open-webui
     restart: unless-stopped
     env_file:
@@ -69,6 +72,7 @@ services:
     image: ghcr.io/open-webui/pipelines:main
     container_name: pipelines
     restart: unless-stopped
+    pull_policy: always
     environment:
       - PIPELINES_API_KEY=${PIPELINES_API_KEY}
     volumes:
